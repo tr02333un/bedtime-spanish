@@ -33,34 +33,26 @@
   header h1 { font-size: 1.45rem; font-weight: 700; color: #f0d4c4; }
   header p { color: var(--muted); font-size: 0.82rem; margin-top: 5px; }
 
-  /* 播放器區 */
-  #yt-player-wrap {
+  /* 聲音選擇器 */
+  #voice-bar {
     background: var(--panel2);
-    border: 1.5px solid rgba(247,160,123,0.3);
+    border: 1.5px solid #2a2e4a;
     border-radius: var(--radius);
-    padding: 14px;
-    margin-bottom: 20px;
-    display: none;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
-  #yt-player-wrap.visible { display: block; }
-  #yt-now-playing {
-    font-size: 0.78rem; color: var(--muted); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 8px;
+  #voice-bar label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+  #voice-select {
+    flex: 1; background: var(--bg); border: 1.5px solid #3a3e5a;
+    color: var(--text); font-family: inherit; font-size: 0.82rem;
+    padding: 7px 10px; border-radius: 10px; outline: none; min-width: 0;
   }
-  #yt-now-playing strong { color: var(--accent); font-size:0.9rem; }
-  #yt-close {
-    margin-left: auto; background: none; border: none; color: var(--muted);
-    cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 6px;
-  }
-  #yt-close:hover { color: var(--text); }
-  #yt-frame-wrap {
-    position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
-    border-radius: 10px;
-  }
-  #yt-frame-wrap iframe {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
-  }
-  #yt-hint { color: var(--muted); font-size: 0.72rem; margin-top: 8px; text-align: center; }
+  #voice-select:focus { border-color: var(--accent); }
+  #rate-wrap { display: flex; align-items: center; gap: 6px; }
+  #rate-wrap label { font-size: 0.75rem; color: var(--muted); }
+  #rate-range { width: 70px; accent-color: var(--accent); }
+  #rate-val { font-size: 0.75rem; color: var(--accent); width: 28px; }
 
   /* 搜尋 */
   .search-row { display: flex; gap: 10px; margin-bottom: 14px; }
@@ -119,6 +111,13 @@
     padding: 6px 11px; border-radius: 999px; cursor: pointer; transition: all 0.2s;
   }
   .sc-del:hover { border-color: #c0392b; color: #e74c3c; }
+  .sc-yg {
+    color: var(--muted); font-size: 0.78rem; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 12px; border-radius: 999px; border: 1px solid #2a2e4a;
+    transition: all 0.2s;
+  }
+  .sc-yg:hover { border-color: var(--accent); color: var(--accent); }
 
   /* 語塊 */
   .chunk-toggle {
@@ -200,16 +199,15 @@
   <p>按一下 ▶ 直接聽真人說</p>
 </header>
 
-<!-- YouTube 播放器 -->
-<div id="yt-player-wrap">
-  <div id="yt-now-playing">
-    <span>▶ 正在播：</span><strong id="yt-sentence-label">—</strong>
-    <button id="yt-close" onclick="closePlayer()">✕</button>
+<!-- 聲音選擇器 -->
+<div id="voice-bar">
+  <label>🔊 聲音</label>
+  <select id="voice-select"><option value="">載入中…</option></select>
+  <div id="rate-wrap">
+    <label>速度</label>
+    <input type="range" id="rate-range" min="0.5" max="1.2" step="0.05" value="0.82" oninput="document.getElementById('rate-val').textContent=parseFloat(this.value).toFixed(2)">
+    <span id="rate-val">0.82</span>
   </div>
-  <div id="yt-frame-wrap">
-    <iframe id="yt-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-  </div>
-  <div id="yt-hint">影片由 YouTube 提供，點播放器內的 ▶ 開始播放</div>
 </div>
 
 <!-- 篩選 + 搜尋 -->
@@ -284,34 +282,49 @@
 
 <div id="toast"></div>
 
-<!-- YouTube 播放器 JS -->
+<!-- 聲音 + YouGlish JS -->
 <script>
+var esVoices = [];
 var currentPlayingCard = null;
 
-function playYG(sentence, cardEl) {
-  // 更新標題
-  document.getElementById('yt-sentence-label').textContent = sentence;
-  document.getElementById('yt-player-wrap').classList.add('visible');
+function loadVoices() {
+  var all = window.speechSynthesis.getVoices();
+  esVoices = all.filter(v => v.lang.startsWith('es'));
+  var sel = document.getElementById('voice-select');
+  if (esVoices.length === 0) {
+    sel.innerHTML = '<option value="">（找不到西語聲音）</option>';
+    return;
+  }
+  sel.innerHTML = esVoices.map((v, i) =>
+    '<option value="' + i + '">' + v.name + ' [' + v.lang + ']</option>'
+  ).join('');
+  // 預設選第一個
+  sel.value = '0';
+}
 
-  // 換牌高亮
+if (window.speechSynthesis) {
+  if (speechSynthesis.getVoices().length) loadVoices();
+  else speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function playYG(sentence, cardEl) {
+  if (!window.speechSynthesis) { showToast('此瀏覽器不支援語音'); return; }
+
   if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
   currentPlayingCard = cardEl;
   cardEl.classList.add('playing');
 
-  // 用 YouTube 搜尋這句西語句子，autoplay
-  var query = encodeURIComponent(sentence + ' spanish pronunciation');
-  var src = 'https://www.youtube.com/embed?listType=search&list=' + query + '&autoplay=1&hl=es';
-  document.getElementById('yt-iframe').src = src;
-
-  // 捲到播放器
-  document.getElementById('yt-player-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function closePlayer() {
-  document.getElementById('yt-player-wrap').classList.remove('visible');
-  document.getElementById('yt-iframe').src = '';
-  if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
-  currentPlayingCard = null;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(sentence);
+  var idx = parseInt(document.getElementById('voice-select').value);
+  var rate = parseFloat(document.getElementById('rate-range').value);
+  if (esVoices[idx]) { u.voice = esVoices[idx]; u.lang = esVoices[idx].lang; }
+  else { u.lang = 'es'; }
+  u.rate = rate;
+  u.onend = () => { if (currentPlayingCard) currentPlayingCard.classList.remove('playing'); currentPlayingCard = null; };
+  u.onerror = () => showToast('播放失敗');
+  window.speechSynthesis.speak(u);
+  showToast('🔊 朗讀中…');
 }
 </script>
 
@@ -429,8 +442,9 @@ function renderSentences() {
         <div class="sc-es">${s.es}</div>
         <div class="sc-zh">${s.zh}</div>
         <div class="sc-actions">
-          <button class="sc-play" id="play-${sid}">▶ 真人發音</button>
-          ${origIdx >= 0 ? `<button class="sc-del" onclick="deleteSentence(${origIdx})">✕ 刪除</button>` : ''}
+          <button class="sc-play" id="play-${sid}">▶ 朗讀</button>
+          <a class="sc-yg" href="https://youglish.com/pronounce/${encodeURIComponent(s.es.replace(/[¿¡.!?,]/g,'').trim())}/spanish" target="_blank">🎬 YouGlish</a>
+          ${origIdx >= 0 ? `<button class="sc-del" onclick="deleteSentence(${origIdx})">✕</button>` : ''}
         </div>
         ${chunkRows ? `
         <button class="chunk-toggle" onclick="toggleChunk('${sid}')">
