@@ -33,8 +33,8 @@
   header h1 { font-size: 1.45rem; font-weight: 700; color: #f0d4c4; }
   header p { color: var(--muted); font-size: 0.82rem; margin-top: 5px; }
 
-  /* YouGlish 播放器區 */
-  #yg-player-wrap {
+  /* 播放器區 */
+  #yt-player-wrap {
     background: var(--panel2);
     border: 1.5px solid rgba(247,160,123,0.3);
     border-radius: var(--radius);
@@ -42,18 +42,25 @@
     margin-bottom: 20px;
     display: none;
   }
-  #yg-player-wrap.visible { display: block; }
-  #yg-now-playing {
+  #yt-player-wrap.visible { display: block; }
+  #yt-now-playing {
     font-size: 0.78rem; color: var(--muted); margin-bottom: 10px;
     display: flex; align-items: center; gap: 8px;
   }
-  #yg-now-playing strong { color: var(--accent); }
-  #yg-close {
+  #yt-now-playing strong { color: var(--accent); font-size:0.9rem; }
+  #yt-close {
     margin-left: auto; background: none; border: none; color: var(--muted);
     cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 6px;
   }
-  #yg-close:hover { color: var(--text); }
-  #widget-1 { width: 100%; }
+  #yt-close:hover { color: var(--text); }
+  #yt-frame-wrap {
+    position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    border-radius: 10px;
+  }
+  #yt-frame-wrap iframe {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+  }
+  #yt-hint { color: var(--muted); font-size: 0.72rem; margin-top: 8px; text-align: center; }
 
   /* 搜尋 */
   .search-row { display: flex; gap: 10px; margin-bottom: 14px; }
@@ -183,12 +190,7 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* Powered by */
-  .yg-credit {
-    font-size: 0.68rem; color: var(--muted); text-align: right;
-    margin-top: 6px;
-  }
-  .yg-credit a { color: var(--muted); }
+
 </style>
 </head>
 <body>
@@ -198,14 +200,16 @@
   <p>按一下 ▶ 直接聽真人說</p>
 </header>
 
-<!-- YouGlish 播放器（固定在上方） -->
-<div id="yg-player-wrap">
-  <div id="yg-now-playing">
-    <span>▶ 正在播：</span><strong id="yg-sentence-label">—</strong>
-    <button id="yg-close" onclick="closePlayer()">✕</button>
+<!-- YouTube 播放器 -->
+<div id="yt-player-wrap">
+  <div id="yt-now-playing">
+    <span>▶ 正在播：</span><strong id="yt-sentence-label">—</strong>
+    <button id="yt-close" onclick="closePlayer()">✕</button>
   </div>
-  <div id="widget-1"></div>
-  <div class="yg-credit">Powered by <a href="https://youglish.com" target="_blank">YouGlish.com</a></div>
+  <div id="yt-frame-wrap">
+    <iframe id="yt-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  </div>
+  <div id="yt-hint">影片由 YouTube 提供，點播放器內的 ▶ 開始播放</div>
 </div>
 
 <!-- 篩選 + 搜尋 -->
@@ -280,60 +284,34 @@
 
 <div id="toast"></div>
 
-<!-- YouGlish Widget API -->
+<!-- YouTube 播放器 JS -->
 <script>
-var tag = document.createElement('script');
-tag.src = "https://youglish.com/public/emb/widget.js";
-document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
-
-var ygWidget = null;
-var ygReady = false;
-var ygPendingQuery = null;
-
-function onYouglishAPIReady() {
-  ygWidget = new YG.Widget("widget-1", {
-    width: "100%",
-    components: 8, // 播放器 + 字幕，不含搜尋框
-    events: {
-      'onFetchDone': function(e) {
-        if (e.totalResult === 0) {
-          showToast('找不到真人影片，試試單字查詢');
-        }
-      }
-    }
-  });
-  ygReady = true;
-  if (ygPendingQuery) {
-    ygWidget.fetch(ygPendingQuery, "spanish");
-    ygPendingQuery = null;
-  }
-}
-
 var currentPlayingCard = null;
 
 function playYG(sentence, cardEl) {
-  // 捲到播放器
-  document.getElementById('yg-player-wrap').classList.add('visible');
-  document.getElementById('yg-sentence-label').textContent = sentence;
-  document.getElementById('yg-player-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // 更新標題
+  document.getElementById('yt-sentence-label').textContent = sentence;
+  document.getElementById('yt-player-wrap').classList.add('visible');
 
-  // 移除上一張 playing 狀態
+  // 換牌高亮
   if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
   currentPlayingCard = cardEl;
   cardEl.classList.add('playing');
 
-  if (ygReady) {
-    ygWidget.fetch(sentence, "spanish");
-  } else {
-    ygPendingQuery = sentence;
-  }
+  // 用 YouTube 搜尋這句西語句子，autoplay
+  var query = encodeURIComponent(sentence + ' spanish pronunciation');
+  var src = 'https://www.youtube.com/embed?listType=search&list=' + query + '&autoplay=1&hl=es';
+  document.getElementById('yt-iframe').src = src;
+
+  // 捲到播放器
+  document.getElementById('yt-player-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function closePlayer() {
-  document.getElementById('yg-player-wrap').classList.remove('visible');
+  document.getElementById('yt-player-wrap').classList.remove('visible');
+  document.getElementById('yt-iframe').src = '';
   if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
   currentPlayingCard = null;
-  if (ygReady) ygWidget.fetch("", "spanish"); // 清空
 }
 </script>
 
