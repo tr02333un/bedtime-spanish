@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>睡前西語句庫 🌙</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0d0f1a;
+    --panel: #13162a;
+    --panel2: #1a1e35;
+    --accent: #f7a07b;
+    --text: #e8eaf6;
+    --muted: #7a7f9a;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 80px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header { text-align: center; padding: 22px 0 18px; }
+  header h1 { font-size: 1.45rem; font-weight: 700; color: #f0d4c4; }
+  header p { color: var(--muted); font-size: 0.82rem; margin-top: 5px; }
+
+  /* YouGlish 播放器區 */
+  #yg-player-wrap {
+    background: var(--panel2);
+    border: 1.5px solid rgba(247,160,123,0.3);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  #yg-player-wrap.visible { display: block; }
+  #yg-now-playing {
+    font-size: 0.78rem; color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #yg-now-playing strong { color: var(--accent); }
+  #yg-close {
+    margin-left: auto; background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 6px;
+  }
+  #yg-close:hover { color: var(--text); }
+  #widget-1 { width: 100%; }
+
+  /* 搜尋 */
+  .search-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .search-row input {
+    flex: 1; background: var(--panel2); border: 1.5px solid #2a2e4a;
+    color: var(--text); font-family: inherit; font-size: 1rem;
+    padding: 12px 16px; border-radius: var(--radius); outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-row input:focus { border-color: var(--accent); }
+  .search-row button {
+    background: var(--accent); border: none; color: #1a0a00;
+    font-family: inherit; font-size: 0.95rem; font-weight: 700;
+    padding: 12px 22px; border-radius: var(--radius); cursor: pointer;
+  }
+
+  /* 分類 */
+  .filter-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-btn {
+    background: var(--panel2); border: 1.5px solid #2a2e4a;
+    color: var(--muted); font-family: inherit; font-size: 0.78rem;
+    padding: 6px 13px; border-radius: 999px; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(247,160,123,0.08); }
+
+  .cat-tag {
+    display: inline-block; font-size: 0.68rem; padding: 3px 9px;
+    border-radius: 999px; background: rgba(247,160,123,0.12);
+    color: var(--accent); margin: 14px 0 10px; letter-spacing: 0.05em;
+  }
+
+  .count-label { color: var(--muted); font-size: 0.74rem; margin-bottom: 12px; }
+
+  /* 句子卡片 */
+  .sentence-card {
+    background: var(--panel2); border-radius: var(--radius);
+    padding: 15px 17px; margin-bottom: 10px; border: 1.5px solid #2a2e4a;
+    transition: border-color 0.2s;
+  }
+  .sentence-card.playing { border-color: rgba(247,160,123,0.5); background: rgba(247,160,123,0.04); }
+  .sc-es { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .sc-zh { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
+
+  .sc-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sc-play {
+    background: var(--accent); border: none; color: #1a0a00;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700;
+    padding: 7px 16px; border-radius: 999px; cursor: pointer; transition: opacity 0.2s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .sc-play:hover { opacity: 0.85; }
+  .sc-del {
+    margin-left: auto; background: none;
+    border: 1px solid #2a2e4a; color: var(--muted);
+    font-family: inherit; font-size: 0.78rem;
+    padding: 6px 11px; border-radius: 999px; cursor: pointer; transition: all 0.2s;
+  }
+  .sc-del:hover { border-color: #c0392b; color: #e74c3c; }
+
+  /* 語塊 */
+  .chunk-toggle {
+    background: none; border: none; color: var(--muted); font-family: inherit;
+    font-size: 0.72rem; cursor: pointer; padding: 5px 0 0;
+    display: flex; align-items: center; gap: 4px; transition: color 0.2s;
+  }
+  .chunk-toggle:hover { color: var(--accent); }
+  .chunk-table { display: none; width: 100%; border-collapse: collapse; margin-top: 9px; border-radius: 10px; overflow: hidden; }
+  .chunk-table.open { display: table; }
+  .chunk-table th {
+    background: rgba(247,160,123,0.1); color: var(--accent);
+    font-size: 0.67rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 6px 11px; text-align: left; font-weight: 600;
+  }
+  .chunk-table td { padding: 7px 11px; font-size: 0.8rem; border-top: 1px solid #1e2240; vertical-align: top; }
+  .chunk-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .chunk-es { color: var(--text); font-weight: 600; }
+  .chunk-zh { color: var(--muted); }
+  .chunk-note { color: rgba(247,160,123,0.65); font-size: 0.72rem; }
+
+  /* 新增 */
+  .add-section { margin-top: 32px; border-top: 1px solid #2a2e4a; padding-top: 22px; }
+  .section-title { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .add-form { display: grid; gap: 10px; }
+  .add-form input, .add-form select, .add-form textarea {
+    background: var(--panel2); border: 1.5px solid #2a2e4a;
+    color: var(--text); font-family: inherit; font-size: 0.9rem;
+    padding: 11px 14px; border-radius: 12px; outline: none;
+    transition: border-color 0.2s; width: 100%;
+  }
+  .add-form input:focus, .add-form select:focus, .add-form textarea:focus { border-color: var(--accent); }
+  .add-form textarea { resize: vertical; min-height: 72px; }
+  .add-form select option { background: var(--panel2); }
+  .add-btn {
+    background: var(--accent); border: none; color: #1a0a00;
+    font-family: inherit; font-size: 0.95rem; font-weight: 700;
+    padding: 12px; border-radius: 12px; cursor: pointer; width: 100%;
+  }
+
+  /* 外部跳查 */
+  .ext-section { margin-top: 28px; border-top: 1px solid #2a2e4a; padding-top: 22px; }
+  .ext-search-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .ext-search-row input {
+    flex: 1; background: var(--panel2); border: 1.5px solid #2a2e4a;
+    color: var(--text); font-family: inherit; font-size: 0.93rem;
+    padding: 11px 15px; border-radius: 12px; outline: none; transition: border-color 0.2s;
+  }
+  .ext-search-row input:focus { border-color: var(--accent); }
+  .ext-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ext-link-btn {
+    background: var(--panel2); border: 1.5px solid #2a2e4a;
+    color: var(--text); text-decoration: none; font-size: 0.82rem;
+    padding: 12px 14px; border-radius: 12px; display: flex;
+    flex-direction: column; gap: 3px; transition: border-color 0.2s; cursor: pointer;
+  }
+  .ext-link-btn:hover { border-color: var(--accent); }
+  .el-icon { font-size: 1.1rem; }
+  .el-name { font-weight: 600; font-size: 0.82rem; }
+  .el-desc { color: var(--muted); font-size: 0.71rem; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #2a2e4a; color: var(--text);
+    padding: 9px 22px; border-radius: 999px; font-size: 0.84rem;
+    transition: transform 0.3s; z-index: 100; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Powered by */
+  .yg-credit {
+    font-size: 0.68rem; color: var(--muted); text-align: right;
+    margin-top: 6px;
+  }
+  .yg-credit a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌙 睡前西語句庫</h1>
+  <p>按一下 ▶ 直接聽真人說</p>
+</header>
+
+<!-- YouGlish 播放器（固定在上方） -->
+<div id="yg-player-wrap">
+  <div id="yg-now-playing">
+    <span>▶ 正在播：</span><strong id="yg-sentence-label">—</strong>
+    <button id="yg-close" onclick="closePlayer()">✕</button>
+  </div>
+  <div id="widget-1"></div>
+  <div class="yg-credit">Powered by <a href="https://youglish.com" target="_blank">YouGlish.com</a></div>
+</div>
+
+<!-- 篩選 + 搜尋 -->
+<div class="filter-row" id="filters"></div>
+<div class="search-row">
+  <input type="text" id="es-input" placeholder="搜尋中文或西語…" onkeydown="if(event.key==='Enter')renderSentences()">
+  <button onclick="renderSentences()">搜尋</button>
+</div>
+<div class="count-label" id="count-label"></div>
+<div id="es-result"></div>
+
+<!-- 新增 -->
+<div class="add-section">
+  <div class="section-title">＋ 新增句子</div>
+  <div class="add-form">
+    <input type="text" id="new-es" placeholder="西語句子">
+    <input type="text" id="new-zh" placeholder="中文意思">
+    <select id="new-cat">
+      <option value="睡前儀式">睡前儀式</option>
+      <option value="愛與鼓勵">愛與鼓勵</option>
+      <option value="身體照顧">身體照顧</option>
+      <option value="情緒對話">情緒對話</option>
+      <option value="自然與夢境">自然與夢境</option>
+      <option value="其他">其他</option>
+    </select>
+    <textarea id="new-chunks" placeholder="語塊（選填）每行一個，格式：語塊|中文|說明&#10;例：Te quiero|我愛你|動詞 querer"></textarea>
+    <button class="add-btn" onclick="addSentence()">加入句庫</button>
+  </div>
+</div>
+
+<!-- 備份 -->
+<div class="ext-section" style="margin-top:24px">
+  <div class="section-title">💾 備份 / 還原句庫</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="add-btn" style="width:auto;padding:10px 20px;font-size:0.85rem" onclick="exportData()">⬇ 匯出 JSON</button>
+    <label class="add-btn" style="width:auto;padding:10px 20px;font-size:0.85rem;cursor:pointer">
+      ⬆ 匯入 JSON
+      <input type="file" accept=".json" style="display:none" onchange="importData(event)">
+    </label>
+  </div>
+</div>
+
+<!-- 外部跳查 -->
+<div class="ext-section">
+  <div class="section-title">🔗 其他語言跳查</div>
+  <div class="ext-search-row">
+    <input type="text" id="ext-input" placeholder="輸入詞彙…">
+  </div>
+  <div class="ext-links">
+    <a class="ext-link-btn" onclick="openExt('sign')">
+      <span class="el-icon">🤟</span>
+      <span class="el-name">台灣手語</span>
+      <span class="el-desc">教育部手語辭典</span>
+    </a>
+    <a class="ext-link-btn" onclick="openExt('hak')">
+      <span class="el-icon">🍃</span>
+      <span class="el-name">客源翠</span>
+      <span class="el-desc">客語查詢</span>
+    </a>
+    <a class="ext-link-btn" onclick="openExt('rae')">
+      <span class="el-icon">📖</span>
+      <span class="el-name">RAE 辭典</span>
+      <span class="el-desc">西班牙皇家辭典</span>
+    </a>
+    <a class="ext-link-btn" onclick="openExt('wr')">
+      <span class="el-icon">🔍</span>
+      <span class="el-name">WordReference</span>
+      <span class="el-desc">西中例句查詢</span>
+    </a>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- YouGlish Widget API -->
+<script>
+var tag = document.createElement('script');
+tag.src = "https://youglish.com/public/emb/widget.js";
+document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
+
+var ygWidget = null;
+var ygReady = false;
+var ygPendingQuery = null;
+
+function onYouglishAPIReady() {
+  ygWidget = new YG.Widget("widget-1", {
+    width: "100%",
+    components: 8, // 播放器 + 字幕，不含搜尋框
+    events: {
+      'onFetchDone': function(e) {
+        if (e.totalResult === 0) {
+          showToast('找不到真人影片，試試單字查詢');
+        }
+      }
+    }
+  });
+  ygReady = true;
+  if (ygPendingQuery) {
+    ygWidget.fetch(ygPendingQuery, "spanish");
+    ygPendingQuery = null;
+  }
+}
+
+var currentPlayingCard = null;
+
+function playYG(sentence, cardEl) {
+  // 捲到播放器
+  document.getElementById('yg-player-wrap').classList.add('visible');
+  document.getElementById('yg-sentence-label').textContent = sentence;
+  document.getElementById('yg-player-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // 移除上一張 playing 狀態
+  if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
+  currentPlayingCard = cardEl;
+  cardEl.classList.add('playing');
+
+  if (ygReady) {
+    ygWidget.fetch(sentence, "spanish");
+  } else {
+    ygPendingQuery = sentence;
+  }
+}
+
+function closePlayer() {
+  document.getElementById('yg-player-wrap').classList.remove('visible');
+  if (currentPlayingCard) currentPlayingCard.classList.remove('playing');
+  currentPlayingCard = null;
+  if (ygReady) ygWidget.fetch("", "spanish"); // 清空
+}
+</script>
+
+<script>
+// ===== 資料 =====
+const DEFAULT = [
+  { es:'Buenas noches.', zh:'晚安。', cat:'睡前儀式',
+    chunks:[{w:'Buenas',zh:'好的（陰性複數）',n:'形容詞'},{w:'noches',zh:'夜晚（複數）',n:'名詞'}] },
+  { es:'Es hora de dormir.', zh:'該睡覺了。', cat:'睡前儀式',
+    chunks:[{w:'Es hora de',zh:'是…的時間了',n:'固定句型'},{w:'dormir',zh:'睡覺',n:'動詞原形'}] },
+  { es:'Voy a contarte un cuento.', zh:'我要講故事給你聽。', cat:'睡前儀式',
+    chunks:[{w:'Voy a',zh:'我即將…',n:'ir a + 原形 = 近未來'},{w:'contarte',zh:'告訴你',n:'contar + te 縮合'},{w:'un cuento',zh:'一個故事',n:''}] },
+  { es:'Cierra los ojos.', zh:'閉上眼睛。', cat:'睡前儀式',
+    chunks:[{w:'Cierra',zh:'閉上（命令）',n:'cerrar → cierra'},{w:'los ojos',zh:'雙眼',n:'ojo 複數'}] },
+  { es:'Sueña con los angelitos.', zh:'做個好夢。', cat:'睡前儀式',
+    chunks:[{w:'Sueña',zh:'夢見（命令）',n:'soñar → sueña'},{w:'los angelitos',zh:'小天使們',n:'ángel 暱稱'}] },
+  { es:'Te doy un beso de buenas noches.', zh:'給你一個晚安吻。', cat:'睡前儀式',
+    chunks:[{w:'Te doy',zh:'我給你',n:'dar 現在式'},{w:'un beso',zh:'一個吻',n:''},{w:'de buenas noches',zh:'晚安的',n:'修飾語'}] },
+  { es:'Apagamos la luz.', zh:'我們關燈了。', cat:'睡前儀式',
+    chunks:[{w:'Apagamos',zh:'我們關掉',n:'apagar nosotros'},{w:'la luz',zh:'電燈',n:'luz = 光'}] },
+  { es:'Te quiero mucho.', zh:'我很愛你。', cat:'愛與鼓勵',
+    chunks:[{w:'Te',zh:'你（受詞）',n:'代詞前置'},{w:'quiero',zh:'我愛',n:'querer 第一人稱'},{w:'mucho',zh:'非常',n:'副詞'}] },
+  { es:'Eres increíble.', zh:'你很了不起。', cat:'愛與鼓勵',
+    chunks:[{w:'Eres',zh:'你是',n:'ser 描述本質'},{w:'increíble',zh:'令人難以置信的',n:'形容詞'}] },
+  { es:'Estoy muy orgulloso de ti.', zh:'我為你感到驕傲。', cat:'愛與鼓勵',
+    chunks:[{w:'Estoy',zh:'我（狀態）是',n:'estar 情緒'},{w:'orgulloso',zh:'驕傲',n:'形容詞，配主詞性別'},{w:'de ti',zh:'為了你',n:'介詞後的你'}] },
+  { es:'Lo hiciste muy bien hoy.', zh:'你今天做得很好。', cat:'愛與鼓勵',
+    chunks:[{w:'Lo hiciste',zh:'你做了它',n:'hacer 過去式'},{w:'muy bien',zh:'非常好',n:'固定搭配'},{w:'hoy',zh:'今天',n:''}] },
+  { es:'Mañana será un gran día.', zh:'明天會是美好的一天。', cat:'愛與鼓勵',
+    chunks:[{w:'Mañana',zh:'明天',n:''},{w:'será',zh:'將會是',n:'ser 未來式'},{w:'un gran día',zh:'一個美好的日子',n:'gran 前置縮短'}] },
+  { es:'¿Ya te lavaste los dientes?', zh:'牙齒刷了嗎？', cat:'身體照顧',
+    chunks:[{w:'¿Ya',zh:'已經了嗎',n:'副詞'},{w:'te lavaste',zh:'你洗了（自己）',n:'lavarse 反身過去式'},{w:'los dientes',zh:'牙齒',n:'複數'}] },
+  { es:'¿Tienes frío?', zh:'你冷嗎？', cat:'身體照顧',
+    chunks:[{w:'Tienes',zh:'你有',n:'tener 第二人稱'},{w:'frío',zh:'冷',n:'西語說「有冷」'}] },
+  { es:'Te tapo bien.', zh:'我幫你蓋好被子。', cat:'身體照顧',
+    chunks:[{w:'Te',zh:'為你',n:'間接受詞'},{w:'tapo',zh:'我蓋住',n:'tapar 第一人稱'},{w:'bien',zh:'好好地',n:'副詞'}] },
+  { es:'¿Necesitas agua?', zh:'你需要喝水嗎？', cat:'身體照顧',
+    chunks:[{w:'Necesitas',zh:'你需要',n:'necesitar 第二人稱'},{w:'agua',zh:'水',n:'陰性名詞'}] },
+  { es:'¿Cómo te sientes hoy?', zh:'你今天感覺怎麼樣？', cat:'情緒對話',
+    chunks:[{w:'¿Cómo',zh:'怎麼樣',n:'疑問詞'},{w:'te sientes',zh:'你感覺',n:'sentirse 反身動詞'},{w:'hoy',zh:'今天',n:''}] },
+  { es:'¿Qué fue lo mejor del día?', zh:'今天最棒的事是什麼？', cat:'情緒對話',
+    chunks:[{w:'lo mejor',zh:'最棒的（事）',n:'中性冠詞 lo + 形容詞'},{w:'del día',zh:'今天的',n:'de + el = del'}] },
+  { es:'Estoy aquí contigo.', zh:'我在這裡陪著你。', cat:'情緒對話',
+    chunks:[{w:'Estoy aquí',zh:'我在這裡',n:'estar + 地點'},{w:'contigo',zh:'和你一起',n:'con + ti → contigo'}] },
+  { es:'No tengas miedo, estoy cerca.', zh:'不要怕，我在旁邊。', cat:'情緒對話',
+    chunks:[{w:'No tengas',zh:'不要有',n:'tener 虛擬式否定命令'},{w:'miedo',zh:'恐懼',n:'搭配 tener'},{w:'estoy cerca',zh:'我在附近',n:''}] },
+  { es:'Puedes contarme todo.', zh:'你可以告訴我任何事。', cat:'情緒對話',
+    chunks:[{w:'Puedes',zh:'你可以',n:'poder 第二人稱'},{w:'contarme',zh:'告訴我',n:'contar + me 縮合'},{w:'todo',zh:'全部',n:'代詞'}] },
+  { es:'Mira las estrellas.', zh:'看看星星。', cat:'自然與夢境',
+    chunks:[{w:'Mira',zh:'看（命令）',n:'mirar tú 命令式'},{w:'las estrellas',zh:'星星們',n:'estrella 複數'}] },
+  { es:'La luna nos cuida.', zh:'月亮守護著我們。', cat:'自然與夢境',
+    chunks:[{w:'La luna',zh:'月亮',n:'陰性名詞'},{w:'nos cuida',zh:'守護我們',n:'cuidar 第三人稱'}] },
+  { es:'¿De qué quieres soñar esta noche?', zh:'你今晚想夢見什麼？', cat:'自然與夢境',
+    chunks:[{w:'¿De qué',zh:'關於什麼',n:''},{w:'quieres soñar',zh:'你想夢見',n:'querer + 原形'},{w:'esta noche',zh:'今晚',n:''}] },
+  { es:'El día de mañana es un regalo.', zh:'明天是一份禮物。', cat:'自然與夢境',
+    chunks:[{w:'El día de mañana',zh:'明天這一天',n:'較正式說法'},{w:'es un regalo',zh:'是一份禮物',n:''}] },
+];
+
+const CATS = ['全部','睡前儀式','愛與鼓勵','身體照顧','情緒對話','自然與夢境','其他'];
+
+let sentences = JSON.parse(localStorage.getItem('esSentences') || 'null') || DEFAULT;
+let currentCat = '全部';
+
+function save() { localStorage.setItem('esSentences', JSON.stringify(sentences)); }
+
+function buildFilters() {
+  const c = document.getElementById('filters');
+  c.innerHTML = '';
+  CATS.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filter-btn' + (cat === currentCat ? ' active' : '');
+    b.textContent = cat;
+    b.onclick = () => { currentCat = cat; buildFilters(); renderSentences(); };
+    c.appendChild(b);
+  });
+}
+
+function renderSentences() {
+  const q = document.getElementById('es-input').value.trim().toLowerCase();
+  let list = sentences;
+  if (currentCat !== '全部') list = list.filter(s => s.cat === currentCat);
+  if (q) list = list.filter(s => s.es.toLowerCase().includes(q) || s.zh.includes(q));
+
+  document.getElementById('count-label').textContent = `共 ${list.length} 句`;
+
+  const el = document.getElementById('es-result');
+  if (!list.length) { el.innerHTML = `<div style="color:var(--muted);padding:16px 0">找不到符合的句子</div>`; return; }
+
+  const grouped = {};
+  list.forEach(s => { if (!grouped[s.cat]) grouped[s.cat]=[]; grouped[s.cat].push(s); });
+
+  el.innerHTML = '';
+
+  for (const [cat, items] of Object.entries(grouped)) {
+    const catTag = document.createElement('div');
+    catTag.className = 'cat-tag';
+    catTag.textContent = '📂 ' + cat;
+    el.appendChild(catTag);
+
+    items.forEach(s => {
+      const origIdx = sentences.indexOf(s);
+      const sid = 'c' + Math.random().toString(36).slice(2,8);
+
+      const card = document.createElement('div');
+      card.className = 'sentence-card';
+
+      let chunkRows = '';
+      if (s.chunks && s.chunks.length) {
+        s.chunks.forEach(ch => {
+          chunkRows += `<tr><td class="chunk-es">${ch.w}</td><td class="chunk-zh">${ch.zh}</td><td class="chunk-note">${ch.n||''}</td></tr>`;
+        });
+      }
+
+      card.innerHTML = `
+        <div class="sc-es">${s.es}</div>
+        <div class="sc-zh">${s.zh}</div>
+        <div class="sc-actions">
+          <button class="sc-play" id="play-${sid}">▶ 真人發音</button>
+          ${origIdx >= 0 ? `<button class="sc-del" onclick="deleteSentence(${origIdx})">✕ 刪除</button>` : ''}
+        </div>
+        ${chunkRows ? `
+        <button class="chunk-toggle" onclick="toggleChunk('${sid}')">
+          <span id="caret-${sid}">▶</span> 語塊拆解
+        </button>
+        <table class="chunk-table" id="chunk-${sid}">
+          <thead><tr><th>語塊</th><th>中文</th><th>說明</th></tr></thead>
+          <tbody>${chunkRows}</tbody>
+        </table>` : ''}
+      `;
+
+      // 綁定播放按鈕（用 closure 捕捉 s 和 card）
+      card.querySelector(`#play-${sid}`).addEventListener('click', () => {
+        playYG(s.es, card);
+      });
+
+      el.appendChild(card);
+    });
+
+    const spacer = document.createElement('div');
+    spacer.style.height = '4px';
+    el.appendChild(spacer);
+  }
+}
+
+function toggleChunk(sid) {
+  const t = document.getElementById('chunk-'+sid);
+  const c = document.getElementById('caret-'+sid);
+  const open = t.classList.toggle('open');
+  c.textContent = open ? '▼' : '▶';
+}
+
+function addSentence() {
+  const es  = document.getElementById('new-es').value.trim();
+  const zh  = document.getElementById('new-zh').value.trim();
+  const cat = document.getElementById('new-cat').value;
+  const raw = document.getElementById('new-chunks').value.trim();
+  if (!es || !zh) { showToast('請填入西語句子和中文意思'); return; }
+  const chunks = raw ? raw.split('\n').map(l => {
+    const [w,zh2,n] = l.split('|');
+    return { w:(w||'').trim(), zh:(zh2||'').trim(), n:(n||'').trim() };
+  }).filter(c => c.w) : [];
+  sentences.push({ es, zh, cat, chunks });
+  save();
+  renderSentences();
+  document.getElementById('new-es').value = '';
+  document.getElementById('new-zh').value = '';
+  document.getElementById('new-chunks').value = '';
+  showToast('✓ 已加入句庫！');
+}
+
+function deleteSentence(idx) {
+  if (!confirm(`刪除「${sentences[idx].es}」？`)) return;
+  sentences.splice(idx, 1);
+  save();
+  renderSentences();
+  showToast('已刪除');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(sentences, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "es-sentences.json";
+  a.click();
+  showToast("✓ 已匯出！");
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      sentences = data;
+      save();
+      renderSentences();
+      showToast("✓ 匯入 " + data.length + " 句完成！");
+    } catch { showToast("檔案格式錯誤"); }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function openExt(type) {
+  const q = document.getElementById('ext-input').value.trim();
+  const urls = {
+    sign: `https://special.moe.gov.tw/signlanguage/vocabulary?search=${encodeURIComponent(q)}`,
+    hak:  `https://hakspring.pages.dev/?q=${encodeURIComponent(q)}`,
+    rae:  `https://dle.rae.es/${encodeURIComponent(q)}`,
+    wr:   `https://www.wordreference.com/es/en/translation.asp?spen=${encodeURIComponent(q)}`,
+  };
+  window.open(urls[type], '_blank');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+window.onload = () => { buildFilters(); renderSentences(); };
+</script>
+</body>
+</html>
