@@ -138,6 +138,8 @@
   .chunk-es { color: var(--text); font-weight: 600; }
   .chunk-zh { color: var(--muted); }
   .chunk-note { color: rgba(247,160,123,0.65); font-size: 0.72rem; }
+  .chunk-yg { color: var(--muted); font-size: 0.8rem; text-decoration: none; padding: 2px 6px; border-radius: 6px; border: 1px solid #2a2e4a; transition: all 0.2s; white-space: nowrap; }
+  .chunk-yg:hover { border-color: var(--accent); color: var(--accent); }
 
   /* 新增 */
   .add-section { margin-top: 32px; border-top: 1px solid #2a2e4a; padding-top: 22px; }
@@ -434,7 +436,8 @@ function renderSentences() {
       let chunkRows = '';
       if (s.chunks && s.chunks.length) {
         s.chunks.forEach(ch => {
-          chunkRows += `<tr><td class="chunk-es">${ch.w}</td><td class="chunk-zh">${ch.zh}</td><td class="chunk-note">${ch.n||''}</td></tr>`;
+          const ygWord = encodeURIComponent(ch.w.replace(/[¿¡.!?,]/g,'').trim());
+          chunkRows += `<tr><td class="chunk-es">${ch.w}</td><td class="chunk-zh">${ch.zh}</td><td class="chunk-note">${ch.n||''}</td><td><a href="https://youglish.com/pronounce/${ygWord}/spanish" target="_blank" class="chunk-yg">🎬</a></td></tr>`;
         });
       }
 
@@ -451,7 +454,7 @@ function renderSentences() {
           <span id="caret-${sid}">▶</span> 語塊拆解
         </button>
         <table class="chunk-table" id="chunk-${sid}">
-          <thead><tr><th>語塊</th><th>中文</th><th>說明</th></tr></thead>
+          <thead><tr><th>語塊</th><th>中文</th><th>說明</th><th></th></tr></thead>
           <tbody>${chunkRows}</tbody>
         </table>` : ''}
       `;
